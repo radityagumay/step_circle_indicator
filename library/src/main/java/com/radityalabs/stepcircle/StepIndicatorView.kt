@@ -5,13 +5,11 @@ import android.animation.ObjectAnimator
 import android.annotation.TargetApi
 import android.content.Context
 import android.graphics.*
-import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Parcel
 import android.os.Parcelable
 import android.support.annotation.UiThread
 import android.support.v4.content.ContextCompat
-import android.support.v4.view.ViewPager
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -24,19 +22,7 @@ import android.view.View
 import android.view.animation.DecelerateInterpolator
 import java.util.*
 
-class StepperIndicatorView : View, ViewPager.OnPageChangeListener {
-    override fun onPageScrollStateChanged(state: Int) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun onPageSelected(position: Int) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
+class StepperIndicatorView : View {
     companion object {
         private val TAG = "StepperIndicatorView"
         private const val DEFAULT_ANIMATION_DURATION = 200
@@ -88,8 +74,6 @@ class StepperIndicatorView : View, ViewPager.OnPageChangeListener {
     private val stepAreaRect = Rect()
     private val stepAreaRectF = RectF()
 
-    private var pager: ViewPager? = null
-    private var doneIcon: Drawable? = null
     private var showDoneIcon: Boolean = false
 
     private var labelPaint: TextPaint? = null
@@ -152,24 +136,16 @@ class StepperIndicatorView : View, ViewPager.OnPageChangeListener {
     private fun init(context: Context, attrs: AttributeSet?, defStyleAttr: Int) {
         val resources = resources
         val defaultPrimaryColor = getPrimaryColor(context)
-
-        val defaultCircleColor = ContextCompat.getColor(context, R.color.stpi_default_circle_color)
-        val defaultCircleRadius = resources.getDimension(R.dimen.stpi_default_circle_radius)
-        val defaultCircleStrokeWidth = resources.getDimension(R.dimen.stpi_default_circle_stroke_width)
-
-
+        val defaultCircleRadius = resources.getDimension(R.dimen.circle_size)
         val defaultIndicatorRadius = resources.getDimension(R.dimen.stpi_default_indicator_radius)
-
-        val defaultLineStrokeWidth = resources.getDimension(R.dimen.stpi_default_line_stroke_width)
         val defaultLineMargin = resources.getDimension(R.dimen.stpi_default_line_margin)
-        val defaultLineColor = ContextCompat.getColor(context, R.color.stpi_default_line_color)
 
         val a = context.obtainStyledAttributes(attrs, R.styleable.StepperIndicatorView, defStyleAttr, 0)
 
         circlePaint = Paint()
-        circlePaint!!.strokeWidth = a.getDimension(R.styleable.StepperIndicatorView_stpi_circleStrokeWidth, defaultCircleStrokeWidth)
+        circlePaint!!.strokeWidth = 4f //a.getDimension(R.styleable.StepperIndicatorView_stpi_circleStrokeWidth, defaultCircleStrokeWidth)
         circlePaint!!.style = Paint.Style.STROKE
-        circlePaint!!.color = a.getColor(R.styleable.StepperIndicatorView_stpi_circleColor, defaultCircleColor)
+        circlePaint!!.color = resources.getColor(R.color.lifeGreen) //a.getColor(R.styleable.StepperIndicatorView_stpi_circleColor, defaultCircleColor)
         circlePaint!!.isAntiAlias = true
 
         setStepCount(a.getInteger(R.styleable.StepperIndicatorView_stpi_stepCount, 2))
@@ -177,27 +153,16 @@ class StepperIndicatorView : View, ViewPager.OnPageChangeListener {
         val stepsCircleColorsResId = a.getResourceId(R.styleable.StepperIndicatorView_stpi_stepsCircleColors, 0)
         if (stepsCircleColorsResId != 0) {
             stepsCirclePaintList = ArrayList(stepCount)
-
             for (i in 0 until stepCount) {
                 val circlePaint = Paint(this.circlePaint)
-                if (isInEditMode) {
-                    circlePaint.color = randomColor
-                } else {
-                    val colorResValues = context.resources.obtainTypedArray(stepsCircleColorsResId)
-
-                    if (stepCount > colorResValues.length()) {
-                        throw IllegalArgumentException("Stepcunt should greater than colorResValue")
-                    }
-                    circlePaint.color = colorResValues.getColor(i, 0) // put you default one
-                    colorResValues.recycle()
-                }
+                circlePaint.color = resources.getColor(R.color.lifeGreen)
                 stepsCirclePaintList!!.add(circlePaint)
             }
         }
 
         indicatorPaint = Paint(circlePaint)
         indicatorPaint!!.style = Paint.Style.FILL
-        indicatorPaint!!.color = a.getColor(R.styleable.StepperIndicatorView_stpi_indicatorColor, defaultPrimaryColor)
+        indicatorPaint!!.color = resources.getColor(R.color.lifeGreen)
         indicatorPaint!!.isAntiAlias = true
 
         stepTextNumberPaint = Paint(indicatorPaint)
@@ -245,43 +210,16 @@ class StepperIndicatorView : View, ViewPager.OnPageChangeListener {
         }
 
         linePaint = Paint()
-        linePaint!!.strokeWidth = a.getDimension(R.styleable.StepperIndicatorView_stpi_lineStrokeWidth, defaultLineStrokeWidth)
+        linePaint!!.strokeWidth = a.getDimension(R.styleable.StepperIndicatorView_stpi_lineStrokeWidth, 4f)
         linePaint!!.strokeCap = Paint.Cap.ROUND
         linePaint!!.style = Paint.Style.STROKE
-        linePaint!!.color = a.getColor(R.styleable.StepperIndicatorView_stpi_lineColor, defaultLineColor)
+        linePaint!!.color = resources.getColor(R.color.lifeGrey)
         linePaint!!.isAntiAlias = true
 
         lineDonePaint = Paint(linePaint)
         lineDonePaint!!.color = a.getColor(R.styleable.StepperIndicatorView_stpi_lineDoneColor, defaultPrimaryColor)
 
         lineDoneAnimatedPaint = Paint(lineDonePaint)
-
-        // Check if we should use the bottom indicator instead of the bullet one
-        useBottomIndicator = a.getBoolean(R.styleable.StepperIndicatorView_stpi_useBottomIndicator, false)
-        if (useBottomIndicator) {
-            // Get the default height(stroke width) for the bottom indicator
-            val defaultHeight = resources.getDimension(R.dimen.stpi_default_bottom_indicator_height)
-
-            bottomIndicatorHeight = a
-                    .getDimension(R.styleable.StepperIndicatorView_stpi_bottomIndicatorHeight, defaultHeight)
-
-            if (bottomIndicatorHeight <= 0) {
-                Log.d(TAG, "init: Invalid indicator height, disabling bottom indicator feature! Please provide " + "a value greater than 0.")
-                useBottomIndicator = false
-            }
-
-            // Get the default width for the bottom indicator
-            val defaultWidth = resources.getDimension(R.dimen.stpi_default_bottom_indicator_width)
-            bottomIndicatorWidth = a.getDimension(R.styleable.StepperIndicatorView_stpi_bottomIndicatorWidth, defaultWidth)
-
-            // Get the default top margin for the bottom indicator
-            val defaultTopMargin = resources.getDimension(R.dimen.stpi_default_bottom_indicator_margin_top)
-            bottomIndicatorMarginTop = a
-                    .getDimension(R.styleable.StepperIndicatorView_stpi_bottomIndicatorMarginTop, defaultTopMargin)
-
-            useBottomIndicatorWithStepColors = a
-                    .getBoolean(R.styleable.StepperIndicatorView_stpi_useBottomIndicatorWithStepColors, false)
-        }
 
         circleRadius = a.getDimension(R.styleable.StepperIndicatorView_stpi_circleRadius, defaultCircleRadius)
         checkRadius = circleRadius + circlePaint!!.strokeWidth / 2f
@@ -292,7 +230,6 @@ class StepperIndicatorView : View, ViewPager.OnPageChangeListener {
 
         animDuration = a.getInteger(R.styleable.StepperIndicatorView_stpi_animDuration, DEFAULT_ANIMATION_DURATION)
         showDoneIcon = a.getBoolean(R.styleable.StepperIndicatorView_stpi_showDoneIcon, true)
-        doneIcon = a.getDrawable(R.styleable.StepperIndicatorView_stpi_doneIconDrawable)
 
         // Labels Configuration
         labelPaint = TextPaint(Paint.ANTI_ALIAS_FLAG)
@@ -323,14 +260,6 @@ class StepperIndicatorView : View, ViewPager.OnPageChangeListener {
         }
 
         a.recycle()
-
-        if (showDoneIcon && doneIcon == null) {
-            doneIcon = ContextCompat.getDrawable(context, R.drawable.ic_done_white_18dp)
-        }
-        if (doneIcon != null) {
-            val size = getContext().resources.getDimensionPixelSize(R.dimen.stpi_done_icon_size)
-            doneIcon!!.setBounds(0, 0, size, size)
-        }
 
         // Display at least 1 cleared step for preview in XML editor
         if (isInEditMode) {
@@ -364,52 +293,28 @@ class StepperIndicatorView : View, ViewPager.OnPageChangeListener {
             val indicator = indicators!![i]
             val drawCheck = i < currentStep || drawFromNext && i == currentStep
             canvas.drawCircle(indicator, centerY, circleRadius, getStepCirclePaint(i))
-            if (showStepTextNumber) {
-                val stepLabel = (i + 1).toString()
+            val stepLabel = (i + 1).toString()
 
-                stepAreaRect.set((indicator - circleRadius).toInt(), (centerY - circleRadius).toInt(),
-                        (indicator + circleRadius).toInt(), (centerY + circleRadius).toInt())
-                stepAreaRectF.set(stepAreaRect)
+            stepAreaRect.set((indicator - circleRadius).toInt(), (centerY - circleRadius).toInt(),
+                    (indicator + circleRadius).toInt(), (centerY + circleRadius).toInt())
+            stepAreaRectF.set(stepAreaRect)
 
-                val stepTextNumberPaint = getStepTextNumberPaint(i)
-                stepAreaRectF.right = stepTextNumberPaint.measureText(stepLabel, 0, stepLabel.length)
-                stepAreaRectF.bottom = stepTextNumberPaint.descent() - stepTextNumberPaint.ascent()
-                stepAreaRectF.left += (stepAreaRect.width() - stepAreaRectF.right) / 2.0f
-                stepAreaRectF.top += (stepAreaRect.height() - stepAreaRectF.bottom) / 2.0f
-                canvas.drawText(stepLabel, stepAreaRectF.left, stepAreaRectF.top - stepTextNumberPaint.ascent(), stepTextNumberPaint)
-            }
+            // draw counter
+            val stepTextNumberPaint = getStepTextNumberPaint(i)
+            stepAreaRectF.right = stepTextNumberPaint.measureText(stepLabel, 0, stepLabel.length)
+            stepAreaRectF.bottom = stepTextNumberPaint.descent() - stepTextNumberPaint.ascent()
+            stepAreaRectF.left += (stepAreaRect.width() - stepAreaRectF.right) / 2.0f
+            stepAreaRectF.top += (stepAreaRect.height() - stepAreaRectF.bottom) / 2.0f
+            canvas.drawText(stepLabel, stepAreaRectF.left, stepAreaRectF.top - stepTextNumberPaint.ascent(), stepTextNumberPaint)
 
-            if (showLabels && i < labelLayouts.size) {
-                drawLayout(labelLayouts[i],
-                        indicator, height.toFloat() - getBottomIndicatorHeight().toFloat() - maxLabelHeight,
-                        canvas, labelPaint)
-            }
-
-            if (useBottomIndicator) {
-                if (i == currentStep) {
-                    canvas.drawRect(indicator - bottomIndicatorWidth / 2, height - bottomIndicatorHeight,
-                            indicator + bottomIndicatorWidth / 2, height.toFloat(),
-                            if (useBottomIndicatorWithStepColors) getStepIndicatorPaint(i) else indicatorPaint)
-                }
-            } else {
-                if (i == currentStep && !drawFromNext || i == previousStep && drawFromNext && inAnimation) {
-                    canvas.drawCircle(indicator, centerY, animIndicatorRadius, getStepIndicatorPaint(i))
-                }
+            if (i == currentStep && !drawFromNext || i == previousStep && drawFromNext && inAnimation) {
+                canvas.drawCircle(indicator, centerY, animIndicatorRadius, getStepIndicatorPaint(i))
             }
 
             if (drawCheck) {
                 var radius = checkRadius
                 if (i == previousStep && drawToNext || i == currentStep && drawFromNext) radius = animCheckRadius
                 canvas.drawCircle(indicator, centerY, radius, getStepIndicatorPaint(i))
-                if (!isInEditMode && showDoneIcon) {
-                    if (i != previousStep && i != currentStep || !inCheckAnimation && !(i == currentStep && !inAnimation)) {
-                        canvas.save()
-                        canvas.translate(indicator - doneIcon!!.intrinsicWidth / 2,
-                                centerY - doneIcon!!.intrinsicHeight / 2)
-                        doneIcon!!.draw(canvas)
-                        canvas.restore()
-                    }
-                }
             }
 
             if (i < linePathList.size) {
@@ -692,53 +597,6 @@ class StepperIndicatorView : View, ViewPager.OnPageChangeListener {
         invalidate()
     }
 
-    fun setViewPager(pager: ViewPager) {
-        if (pager.adapter == null) {
-            throw IllegalStateException("ViewPager does not have adapter instance.")
-        }
-        setViewPager(pager, pager.adapter.count)
-    }
-
-    fun setViewPager(pager: ViewPager, keepLastPage: Boolean) {
-        if (pager.adapter == null) {
-            throw IllegalStateException("ViewPager does not have adapter instance.")
-        }
-        setViewPager(pager, pager.adapter.count - if (keepLastPage) 1 else 0)
-    }
-
-    fun setViewPager(pager: ViewPager, stepCount: Int) {
-        if (this.pager === pager) {
-            return
-        }
-        if (this.pager != null) {
-            pager.removeOnPageChangeListener(this)
-        }
-        if (pager.adapter == null) {
-            throw IllegalStateException("ViewPager does not have adapter instance.")
-        }
-
-        this.pager = pager
-        this.stepCount = stepCount
-        currentStep = 0
-        pager.addOnPageChangeListener(this)
-
-        if (showLabels && labels == null) {
-            setLabelsUsingPageTitles()
-        }
-
-        requestLayout()
-        invalidate()
-    }
-
-    private fun setLabelsUsingPageTitles() {
-        val pagerAdapter = pager!!.adapter
-        val pagerCount = pagerAdapter.count
-        labels = arrayOf()
-        for (i in 0 until pagerCount) {
-            labels!![i] = pagerAdapter.getPageTitle(i)
-        }
-    }
-
     fun setLabels(labelsArray: Array<CharSequence>?) {
         if (labelsArray == null) {
             labels = null
@@ -773,21 +631,6 @@ class StepperIndicatorView : View, ViewPager.OnPageChangeListener {
 
     fun clearOnStepClickListeners() {
         onStepClickListeners.clear()
-    }
-
-    fun setDoneIcon(doneIcon: Drawable?) {
-        this.doneIcon = doneIcon
-        if (doneIcon != null) {
-            showDoneIcon = true
-            val size = context.resources.getDimensionPixelSize(R.dimen.stpi_done_icon_size)
-            doneIcon.setBounds(0, 0, size, size)
-        }
-        invalidate()
-    }
-
-    fun setShowDoneIcon(showDoneIcon: Boolean) {
-        this.showDoneIcon = showDoneIcon
-        invalidate()
     }
 
     public override fun onRestoreInstanceState(state: Parcelable) {
@@ -839,7 +682,7 @@ class StepperIndicatorView : View, ViewPager.OnPageChangeListener {
     }
 
     private fun drawLayout(layout: Layout, x: Float, y: Float,
-                   canvas: Canvas, paint: TextPaint?) {
+                           canvas: Canvas, paint: TextPaint?) {
         canvas.save()
         canvas.translate(x, y)
         layout.draw(canvas)

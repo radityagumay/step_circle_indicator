@@ -2,19 +2,20 @@
 <android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="android.radityalabs.com.stepcircie.MainActivity"
     tools:showIn="@layout/activity_main">
 
-    <com.radityalabs.stepcircle.StepperIndicatorView
+    <!--<com.radityalabs.stepcircle.StepView
         android:id="@+id/stepView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
         android:layout_marginTop="32dp"
-        app:stpi_labels="@array/stepLabels" />
+        app:stpi_labels="@array/stepLabels" />-->
 
 </android.support.constraint.ConstraintLayout>
