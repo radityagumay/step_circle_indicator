@@ -3,6 +3,8 @@ package com.radityalabs.stepcircle
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
+import android.graphics.Rect
+import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.View
 import kotlin.properties.Delegates
@@ -33,7 +35,6 @@ class StepView @JvmOverloads constructor(context: Context,
     init {
         initCirclePaint()
         initTextPaint()
-
         calculate()
     }
 
@@ -45,18 +46,26 @@ class StepView @JvmOverloads constructor(context: Context,
         this.currentStep = 1
     }
 
+    private val stepAreaRect = Rect()
+    private val stepAreaRectF = RectF()
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         for (i in 0 until currentStep) {
-            canvas.drawCircle(centerX, 100f, 40f, selectedCirclePaint)
-            canvas.drawText("1", centerX, 100f, selectedTextPaint)
-            centerX += (60f + 60f)
+            canvas.drawCircle(centerX, 100f, 60f, selectedCirclePaint)
+
+            stepAreaRect.set((centerX - 60f).toInt(), (100f - 60f).toInt(),
+                    (centerX + 60f).toInt(), (100f + 60f).toInt())
+            stepAreaRectF.set(stepAreaRect)
+
+            canvas.drawText((i + 1).toString(), centerX, 100f, selectedTextPaint)
+            centerX += (60f + 120f)
         }
 
         for (i in currentStep until stepCount) {
-            canvas.drawCircle(centerX, 100f, 40f, unSelectedCirclePaint)
-            canvas.drawText("1", centerX, 100f, unSelectedTextPaint)
-            centerX += (60f + 60f)
+            canvas.drawCircle(centerX, 100f, 60f, unSelectedCirclePaint)
+            canvas.drawText((i + 1).toString(), centerX, 100f, unSelectedTextPaint)
+            centerX += (60f + 120f)
         }
     }
 
@@ -78,11 +87,11 @@ class StepView @JvmOverloads constructor(context: Context,
         selectedTextPaint = Paint().apply {
             style = Paint.Style.FILL
             color = resources.getColor(R.color.lifeWhite)
-            textSize = resource.getDimension(R.dimen.stpi_default_text_size)
+            textSize = resource.getDimension(R.dimen.stpi_default_text_medium_size)
             isAntiAlias = true
         }
 
-        unSelectedCirclePaint = Paint(selectedTextPaint).apply {
+        unSelectedTextPaint = Paint(selectedTextPaint).apply {
             color = resources.getColor(R.color.lifeGreen)
         }
     }
