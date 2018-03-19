@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <declare-styleable name="StepperIndicatorView" tools:ignore="ResourceName">
+    <declare-styleable name="StepIndicatorHorizontalView" tools:ignore="ResourceName">
         <attr name="stpi_stepCount" format="integer"/>
         <attr name="stpi_animDuration" format="integer"/>
 

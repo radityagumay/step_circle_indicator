@@ -23,18 +23,19 @@ import kotlin.properties.Delegates
  * mimic functionality from https://github.com/badoualy/stepper-indicator
  * and modified as needed
  */
-class StepperIndicatorView @JvmOverloads constructor(context: Context,
-                                                     attrs: AttributeSet? = null,
-                                                     defStyle: Int = 0) : View(context, attrs, defStyle) {
+class StepIndicatorHorizontalView @JvmOverloads constructor(context: Context,
+                                                            attrs: AttributeSet? = null,
+                                                            defStyle: Int = 0) : View(context, attrs, defStyle) {
 
     companion object {
-        private val TAG = StepperIndicatorView::class.java.simpleName
+        private val TAG = StepIndicatorHorizontalView::class.java.simpleName
 
         private const val DEFAULT_ANIMATION_DURATION = 200
         private const val EXPAND_MARK = 1.3f
         private const val STEP_INVALID = -1
     }
 
+    private var orientation = StepOrientation.HORIZONTAL
     private var animDuration: Int = 0
     private var stepCount: Int = 0
     private var currentStep: Int = 0
@@ -101,6 +102,9 @@ class StepperIndicatorView @JvmOverloads constructor(context: Context,
     private val stepCenterY: Float
         get() = measuredHeight.toFloat() / 2f
 
+    private val stepCenterX: Float
+        get() = measuredWidth.toFloat() / 2f
+
     init {
         init(context, attrs, defStyle)
     }
@@ -115,6 +119,49 @@ class StepperIndicatorView @JvmOverloads constructor(context: Context,
     }
 
     override fun onDraw(canvas: Canvas) {
+        if (orientation == StepOrientation.HORIZONTAL) {
+            horizontal(canvas)
+        }
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        compute()
+    }
+
+    override fun onRestoreInstanceState(state: Parcelable) {
+        val savedState = state as SavedState
+        super.onRestoreInstanceState(savedState.superState)
+        currentStep = savedState.mCurrentStep
+        requestLayout()
+    }
+
+    override fun onSaveInstanceState(): Parcelable? {
+        val superState = super.onSaveInstanceState()
+        val savedState = SavedState(superState)
+        savedState.mCurrentStep = currentStep
+        return savedState
+    }
+
+    fun setOrientation(orientation: StepOrientation) {
+        this.orientation = orientation
+        this.currentStep = 0
+        compute()
+        invalidate()
+    }
+
+    private fun computeStepsClickAreas() {
+        stepsClickAreas = ArrayList(stepCount)
+        for (indicator in indicators) {
+            val left = indicator - circleRadius * 2
+            val right = indicator + circleRadius * 2
+            val top = stepCenterY - circleRadius * 2
+            val bottom = stepCenterY + circleRadius
+            val area = RectF(left, top, right, bottom)
+            stepsClickAreas?.add(area)
+        }
+    }
+
+    private fun horizontal(canvas: Canvas) {
         val centerY = stepCenterY
 
         val inLineAnimation = lineAnimator?.isRunning ?: false
@@ -167,36 +214,6 @@ class StepperIndicatorView @JvmOverloads constructor(context: Context,
         }
     }
 
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        compute()
-    }
-
-    override fun onRestoreInstanceState(state: Parcelable) {
-        val savedState = state as SavedState
-        super.onRestoreInstanceState(savedState.superState)
-        currentStep = savedState.mCurrentStep
-        requestLayout()
-    }
-
-    override fun onSaveInstanceState(): Parcelable? {
-        val superState = super.onSaveInstanceState()
-        val savedState = SavedState(superState)
-        savedState.mCurrentStep = currentStep
-        return savedState
-    }
-
-    fun computeStepsClickAreas() {
-        stepsClickAreas = ArrayList(stepCount)
-        for (indicator in indicators) {
-            val left = indicator - circleRadius * 2
-            val right = indicator + circleRadius * 2
-            val top = stepCenterY - circleRadius * 2
-            val bottom = stepCenterY + circleRadius
-            val area = RectF(left, top, right, bottom)
-            stepsClickAreas?.add(area)
-        }
-    }
-
     private fun setStepCount(stepCount: Int) {
         if (stepCount < 2) {
             throw IllegalArgumentException("StepCount must be >= 2")
@@ -231,8 +248,7 @@ class StepperIndicatorView @JvmOverloads constructor(context: Context,
             animatorSet?.play(lineAnimator)?.with(checkAnimator)?.before(indicatorAnimator)
         } else if (currentStep == previousStep - 1) {
             animatorSet = AnimatorSet()
-            indicatorAnimator = ObjectAnimator
-                    .ofFloat(this, "animIndicatorRadius", indicatorRadius, 0f)
+            indicatorAnimator = ObjectAnimator.ofFloat(this, "animIndicatorRadius", indicatorRadius, 0f)
             animProgress = 1.0f
             lineDoneAnimatedPaint.pathEffect = null
             lineAnimator = ObjectAnimator.ofFloat(this, "animProgress", 0.0f, 1.0f)
@@ -260,7 +276,7 @@ class StepperIndicatorView @JvmOverloads constructor(context: Context,
     }
 
     private fun init(context: Context, attrs: AttributeSet?, defStyleAttr: Int) {
-        typeArray = context.obtainStyledAttributes(attrs, R.styleable.StepperIndicatorView, defStyleAttr, 0)
+        typeArray = context.obtainStyledAttributes(attrs, R.styleable.StepIndicatorHorizontalView, defStyleAttr, 0)
         stepsCirclePaintList = ArrayList(stepCount)
         for (i in 0 until stepCount) {
             val circlePaint = Paint(this.circlePaint)
@@ -294,7 +310,7 @@ class StepperIndicatorView @JvmOverloads constructor(context: Context,
             color = resources.getColor(R.color.lifeGrey)
             isAntiAlias = true
         }
-        setStepCount(5)
+        setStepCount(4)
     }
 
     private fun initIndicatorPaint() {
@@ -314,7 +330,7 @@ class StepperIndicatorView @JvmOverloads constructor(context: Context,
 
     private fun initLinePaint() {
         linePaint = Paint().apply {
-            strokeWidth = typeArray.getDimension(R.styleable.StepperIndicatorView_stpi_lineStrokeWidth, 4f)
+            strokeWidth = typeArray.getDimension(R.styleable.StepIndicatorHorizontalView_stpi_lineStrokeWidth, 4f)
             strokeCap = Paint.Cap.ROUND
             style = Paint.Style.STROKE
             color = resources.getColor(R.color.lifeGrey)
@@ -329,36 +345,38 @@ class StepperIndicatorView @JvmOverloads constructor(context: Context,
     }
 
     private fun initRadius() {
-        circleRadius = typeArray.getDimension(R.styleable.StepperIndicatorView_stpi_circleRadius, defaultCircleRadius)
+        circleRadius = typeArray.getDimension(R.styleable.StepIndicatorHorizontalView_stpi_circleRadius, defaultCircleRadius)
         checkRadius = circleRadius + circlePaint.strokeWidth / 2f
-        indicatorRadius = typeArray.getDimension(R.styleable.StepperIndicatorView_stpi_indicatorRadius, defaultIndicatorRadius)
+        indicatorRadius = typeArray.getDimension(R.styleable.StepIndicatorHorizontalView_stpi_indicatorRadius, defaultIndicatorRadius)
         animIndicatorRadius = indicatorRadius
         animCheckRadius = checkRadius
-        lineMargin = typeArray.getDimension(R.styleable.StepperIndicatorView_stpi_lineMargin, defaultLineMargin)
+        lineMargin = typeArray.getDimension(R.styleable.StepIndicatorHorizontalView_stpi_lineMargin, defaultLineMargin)
 
-        animDuration = typeArray.getInteger(R.styleable.StepperIndicatorView_stpi_animDuration, DEFAULT_ANIMATION_DURATION)
-        showDoneIcon = typeArray.getBoolean(R.styleable.StepperIndicatorView_stpi_showDoneIcon, true)
+        animDuration = typeArray.getInteger(R.styleable.StepIndicatorHorizontalView_stpi_animDuration, DEFAULT_ANIMATION_DURATION)
+        showDoneIcon = typeArray.getBoolean(R.styleable.StepIndicatorHorizontalView_stpi_showDoneIcon, true)
     }
 
     private fun compute() {
-        indicators = FloatArray(stepCount)
-        linePathList.clear()
-        val gridWidth = measuredWidth / stepCount
-        val startX = gridWidth / 2f
-        val divider = (measuredWidth - startX * 2f) / (stepCount - 1)
-        lineLength = divider - (circleRadius * 2f + circlePaint.strokeWidth) - lineMargin * 2
-        for (i in indicators.indices) {
-            indicators[i] = startX + divider * i
+        if (orientation == StepOrientation.HORIZONTAL) {
+            indicators = FloatArray(stepCount)
+            linePathList.clear()
+            val gridWidth = measuredWidth / stepCount
+            val startX = gridWidth / 2f
+            val divider = (measuredWidth - startX * 2f) / (stepCount - 1)
+            lineLength = divider - (circleRadius * 2f + circlePaint.strokeWidth) - lineMargin * 2
+            for (i in indicators.indices) {
+                indicators[i] = startX + divider * i
+            }
+            for (i in 0 until indicators.size - 1) {
+                val position = (indicators[i] + indicators[i + 1]) / 2 - lineLength / 2
+                val linePath = Path()
+                val lineY = stepCenterY
+                linePath.moveTo(position, lineY)
+                linePath.lineTo(position + lineLength, lineY)
+                linePathList.add(linePath)
+            }
+            computeStepsClickAreas()
         }
-        for (i in 0 until indicators.size - 1) {
-            val position = (indicators[i] + indicators[i + 1]) / 2 - lineLength / 2
-            val linePath = Path()
-            val lineY = stepCenterY
-            linePath.moveTo(position, lineY)
-            linePath.lineTo(position + lineLength, lineY)
-            linePathList.add(linePath)
-        }
-        computeStepsClickAreas()
     }
 
     private fun getStepIndicatorPaint(stepPosition: Int): Paint {
@@ -463,4 +481,8 @@ class StepperIndicatorView @JvmOverloads constructor(context: Context,
     interface OnStepClickListener {
         fun onStepClicked(step: Int)
     }
+}
+
+enum class StepOrientation {
+    HORIZONTAL, VERTICAL
 }

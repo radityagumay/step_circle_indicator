@@ -9,7 +9,7 @@
     tools:context="android.radityalabs.com.stepcircie.MainActivity"
     tools:showIn="@layout/activity_main">
 
-    <com.radityalabs.stepcircle.StepperIndicatorView
+    <com.radityalabs.stepcircle.StepIndicatorVerticalView
         android:id="@+id/stepView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
